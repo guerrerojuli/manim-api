@@ -40,21 +40,6 @@ export async function uploadVideoToSupabase(
 }
 
 /**
- * Downloads a video from a URL and returns the buffer
- * @param url - The URL to download the video from
- * @returns The video file buffer
- */
-export async function downloadVideo(url: string): Promise<Buffer> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download video: ${response.statusText}`);
-  }
-
-  const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
-}
-
-/**
  * Get a video from Supabase storage
  * @param fileName - The name of the file to retrieve
  * @returns The video file buffer

@@ -37,12 +37,6 @@ export interface Job {
   completedAt?: Date;
 }
 
-export interface VMRenderResponse {
-  url: string;
-  jobId: string;
-  sceneUsed?: string;
-}
-
 export interface CompilationResult {
   url: string;
   logs: string;

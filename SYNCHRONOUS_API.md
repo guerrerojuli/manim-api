@@ -62,10 +62,12 @@ POST /api/compile
 
 1. Client sends POST request with Manim code
 2. Server receives request
-3. Server calls VM to compile video (waits)
-4. Server downloads compiled video from VM
-5. Server uploads video to Supabase
-6. Server returns final result to client
+3. Server writes code to temporary file
+4. Server spawns Docker container with Manim to compile video (waits)
+5. Server reads compiled video from Docker output directory
+6. Server uploads video to Supabase
+7. Server returns final result to client
+8. Server cleans up temporary files
 
 All of this happens in a **single HTTP request/response cycle**.
 
@@ -84,7 +86,8 @@ Even though each request is synchronous, the API handles multiple requests concu
 
 Node.js's async/await model handles this naturally:
 - Each request is handled by an async function
-- While waiting for VM compilation, Node.js processes other requests
+- While waiting for Docker compilation, Node.js processes other requests
+- Multiple Docker containers can run in parallel
 - No blocking, no queue needed
 
 ## Implementation Details
@@ -138,12 +141,15 @@ No polling, no loops, no status checks!
 
 ## Timeout Handling
 
-The VM compilation has its own timeout mechanism. If a compilation takes too long:
-- The VM will return an error
+Docker containers have their own timeout mechanisms. If a compilation takes too long:
+- The Docker container will be terminated or return an error
 - The API will forward that error to the client
 - The client receives the error in the same request
+- Temporary files are cleaned up automatically
 
 HTTP clients should set appropriate timeouts (e.g., 2-5 minutes) to handle long-running compilations.
+
+**Note:** You can configure Docker resource limits (memory, CPU) in the compiler service to prevent runaway containers.
 
 ## Comparison
 

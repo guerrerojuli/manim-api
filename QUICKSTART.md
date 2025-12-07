@@ -1,6 +1,12 @@
 # Quick Start Guide
 
-Get the Manim API running in 3 simple steps:
+Get the Manim API running in 4 simple steps:
+
+## Prerequisites
+
+- Node.js 20+
+- Docker installed and running
+- Supabase account
 
 ## 1. Install Dependencies
 
@@ -10,7 +16,16 @@ npm install
 pnpm install
 ```
 
-## 2. Configure Environment
+## 2. Pull Docker Image
+
+```bash
+# Download Manim Docker image (one-time setup, ~2GB)
+docker pull manimcommunity/manim:latest
+```
+
+This may take a few minutes on first run.
+
+## 3. Configure Environment
 
 ```bash
 # Copy the example environment file
@@ -27,9 +42,10 @@ Required environment variables:
 Optional (with defaults):
 - `PORT`: Server port (default: 3001)
 - `API_URL`: Public API URL (default: http://localhost:3001)
-- `VM_URL`: Manim render VM URL (default: http://143.110.132.124:8000/render)
+- `DOCKER_IMAGE`: Docker image (default: manimcommunity/manim:latest)
+- `RENDER_QUALITY`: Quality level - ql/qm/qh/qk (default: ql)
 
-## 3. Start the Server
+## 4. Start the Server
 
 ```bash
 # Development mode with auto-reload
@@ -65,26 +81,31 @@ echo "MANIM_API_URL=http://localhost:3001" >> .env
 # The tools.ts file will automatically use the API
 ```
 
-## Docker Deployment
+## Docker Deployment (API Container)
 
 ```bash
-# Build image
+# Build image for the API (not for rendering - that uses manimcommunity/manim)
 docker build -t manim-api .
 
-# Run container
+# Run container with Docker socket access (needed for rendering)
 docker run -p 3001:3001 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
   -e SUPABASE_URL=your-url \
   -e SUPABASE_SERVICE_ROLE_KEY=your-key \
   manim-api
 ```
+
+**Note:** The API container needs access to Docker socket to spawn Manim rendering containers.
 
 ## How It Works
 
 Unlike polling-based APIs, this API is **synchronous**:
 
 1. Client sends POST /api/compile with code
-2. Server compiles the video (waits for completion)
-3. Server returns the result immediately (success or failure)
+2. Server writes code to temp file
+3. Server runs Docker container with Manim to render video (waits for completion)
+4. Server uploads video to Supabase
+5. Server returns the result immediately (success or failure)
 
 **No polling needed!** Just one request that waits for the result.
 
@@ -94,12 +115,24 @@ Unlike polling-based APIs, this API is **synchronous**:
 - Check that all required environment variables are set
 - Ensure port 3001 is not already in use (`lsof -i :3001`)
 
+**Docker not found:**
+- Install Docker Desktop: https://www.docker.com/products/docker-desktop
+- Verify: `docker --version`
+- Ensure Docker Desktop is running
+
 **Video compilation fails:**
-- Verify VM_URL is accessible
+- Check Docker is running (`docker ps` should work)
+- Verify Manim code has valid Scene class
 - Check Supabase credentials and bucket exists
 - Review server logs for detailed error messages
+- Ensure Docker has enough memory (4GB+ recommended)
+
+**First compilation very slow:**
+- Docker is pulling the Manim image (~2GB)
+- Manually pull first: `docker pull manimcommunity/manim:latest`
+- Subsequent runs will be much faster
 
 **Request timeout:**
 - Complex videos may take longer to compile
 - Increase your HTTP client timeout if needed
-- Default compilation timeout is handled by the VM
+- Default render quality is 'ql' (low) for faster rendering

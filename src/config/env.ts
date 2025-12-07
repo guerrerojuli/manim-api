@@ -4,7 +4,8 @@ dotenv.config();
 
 export const config = {
   port: process.env.PORT || 3001,
-  vmUrl: process.env.VM_URL || 'http://143.110.132.124:8000/render',
+  dockerImage: process.env.DOCKER_IMAGE || 'manimcommunity/manim:latest',
+  renderQuality: process.env.RENDER_QUALITY || 'ql',
   supabase: {
     url: process.env.SUPABASE_URL!,
     serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY!,

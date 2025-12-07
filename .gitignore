@@ -30,3 +30,6 @@ coverage/
 
 # Misc
 .cache/
+
+# Temporary rendering files
+temp/
